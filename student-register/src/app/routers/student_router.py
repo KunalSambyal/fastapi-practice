@@ -1,16 +1,26 @@
-from fastapi import status, HTTPException, APIRouter
-from typing import List
+from fastapi import status, HTTPException, APIRouter, Query
+from typing import List, Optional
 from app.schemas.student import StudentOut, StudentIn
 from app.db import students
 
 router = APIRouter(tags=["Students"])
 
 
-# 127.0.0.1:8000/search?name=Kunal+s&id=2
-# {"name":"Kunal s","id":2}
-@router.get("/search")
-def search_student(name: str, id: int):
-    return {"name": name, "id": id}
+@router.get("/students/search", response_model=List[StudentOut])
+def search_student(
+    age: Optional[int] = Query(None, gt=4, le=20, description="Filter students by age"),
+    name: Optional[str] = Query(
+        None, min_length=1, description="Search by student name"
+    ),
+):
+
+    result = [
+        s
+        for s in students
+        if (age is None or s.std_age == age)
+        and (name is None or name.lower() in s.std_name.lower())
+    ]
+    return result
 
 
 @router.get("/students", response_model=List[StudentOut])

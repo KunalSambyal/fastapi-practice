@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Path, Query, APIRouter
+from fastapi import Path, Query, APIRouter
 from typing import Optional
 
 router = APIRouter()
@@ -13,7 +13,7 @@ def get_student(
         title="Student ID",
         description="Must be a 4-digit number between 1000 and 9999",
     ),
-    age: Optional[int] = Query(None, ge=5, le=100, description="Filter by student id"),
+    age: Optional[int] = Query(None, ge=5, le=100, description="Filter by student age"),
     search: str = Query("", max_length=50, description="Search term for student name"),
 ):
     return {"std_id": id, "age": age, "search": search}
