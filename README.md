@@ -1,512 +1,492 @@
-# FastAPI Study Guide
+# ⚡ FastAPI & Async SQLAlchemy 2.0 Mastery Guide
 
-Welcome to the comprehensive FastAPI guide. This README covers all the theoretical definitions, core concepts, practical code snippets, project structure, and modern workflow tools like `uv` to go from beginner to confident REST API developer.
-
----
-
-## Table of Contents
-
-1. [Core Concepts & Definitions](#1-core-concepts--definitions)
-2. [Environment Setup & Installation (pip & uv)](#2-environment-setup--installation-pip--uv)
-3. [Your First FastAPI Application](#3-your-first-fastapi-application)
-4. [HTTP Methods](#4-http-methods)
-5. [Path vs. Query Parameters](#5-path-vs-query-parameters)
-6. [Data Validation with Pydantic](#6-data-validation-with-pydantic)
-7. [Complete In-Memory CRUD API Example](#7-complete-in-memory-crud-api-example)
-8. [HTTP Status Codes & Exception Handling](#8-http-status-codes--exception-handling)
-9. [Response Models](#9-response-models)
-10. [Bonus Concepts: Folder Structure (Standard & `uv`) & Dependency Injection](#10-bonus-concepts-folder-structure-standard--uv--dependency-injection)
+A comprehensive, production-ready guide and reference repository for building high-performance asynchronous REST APIs using **FastAPI**, **Pydantic v2**, and **Async SQLAlchemy 2.0**.
 
 ---
 
-## 1. Core Concepts & Definitions
+## 📑 Table of Contents
 
-### What is an API?
+1. [Core Architectural Concepts](#1-core-architectural-concepts)
+2. [Environment Setup & Package Management (`uv` & `pip`)](#2-environment-setup--package-management-uv--pip)
+3. [FastAPI Fundamentals & HTTP Operations](#3-fastapi-fundamentals--http-operations)
+4. [Pydantic v2 Schema Modeling & Validation](#4-pydantic-v2-schema-modeling--validation)
+5. [Dependency Injection (`Depends`)](#5-dependency-injection-depends)
+6. [Lifespan Management, Middleware & Security](#6-lifespan-management-middleware--security)
+7. [Async Database Integration (SQLAlchemy 2.0 & PostgreSQL/SQLite)](#7-async-database-integration-sqlalchemy-20--postgresqlsqlite)
+8. [Layered Architecture Pattern (DAO / Service / Controller)](#8-layered-architecture-pattern-dao--service--controller)
+9. [Background Tasks & Global Exception Handling](#9-background-tasks--global-exception-handling)
+10. [Project Structures & Running the Applications](#10-project-structures--running-the-applications)
 
-**API** stands for _Application Programming Interface_. It is a set of rules and protocols that allows different software applications to communicate with each other over the network. In web development, APIs usually accept HTTP requests and return responses (often in JSON format).
+---
 
-### What is REST?
+## 1. Core Architectural Concepts
 
-**REST** stands for _Representational State Transfer_. It is an architectural style for designing networked applications. A **RESTful API** uses HTTP standard methods (GET, POST, PUT, DELETE) to manipulate resources identified by URLs. Key principles of REST include:
+### What is an API & REST?
 
-- **Statelessness**: Every request contains all the information needed to understand and process it.
-- **Resource-based URLs**: Endpoints represent resources (e.g., `/students`, `/books/10`).
-- **Standard HTTP Verbs**: Standardized actions performed on resources.
+- **API (Application Programming Interface)**: A standardized interface enabling two distinct systems to exchange data over standard network protocols.
+- **REST (Representational State Transfer)**: An architectural design pattern utilizing standard HTTP verbs (`GET`, `POST`, `PUT`, `DELETE`, `PATCH`) operating statelessly on resource-oriented URI paths (e.g., `/api/v1/cpus`, `/users/42`).
 
 ### Why FastAPI?
 
-[FastAPI](https://fastapi.tiangolo.com/) is a modern, high-performance web framework for building APIs with Python 3.8+ based on standard Python type hints.
-
-- **High Performance**: Powered by Starlette and Pydantic, matching Node.js and Go in speed.
-- **Fast to Code**: Type hints enable autocomplete, reducing bugs significantly.
-- **Auto-Generated Documentation**: Generates interactive Swagger UI (`/docs`) and ReDoc (`/redoc`) automatically.
-- **Automatic Validation**: Validates incoming data using Pydantic out of the box.
-
-### FastAPI vs. Flask (High-Level Comparison)
-
-| Feature               | Flask                                    | FastAPI                              |
-| :-------------------- | :--------------------------------------- | :----------------------------------- |
-| **Execution Model**   | Synchronous (WSGI) by default            | Asynchronous (ASGI) native support   |
-| **Data Validation**   | Manual / Third-party (e.g., Marshmallow) | Automatic using Pydantic models      |
-| **API Documentation** | Manual or third-party extensions         | Built-in automatic OpenAPI / Swagger |
-| **Type Safety**       | Optional, not deeply integrated          | Built into the framework core        |
+- **Asynchronous Performance**: Built on top of **Starlette** (ASGI) and **Pydantic v2** (Rust core), rivaling Node.js and Go benchmarks.
+- **Automated Schema & Docs**: Generates dynamic **OpenAPI (Swagger UI at `/docs`)** and **ReDoc (at `/redoc`)** with zero extra code.
+- **Type-Safe Validation**: Deeply integrated Python type hints guarantee static validation and runtime type coercion.
 
 ---
 
-## 2. Environment Setup & Installation (pip & uv)
+## 2. Environment Setup & Package Management (`uv` & `pip`)
 
-### Option A: Standard Setup (`venv` + `pip`)
+### Option A: Ultra-Fast Setup with `uv` (Recommended ⚡)
 
-#### Step 1: Create a Virtual Environment
-
-**Windows (PowerShell):**
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-**macOS / Linux:**
+[`uv`](https://docs.astral.sh/uv/) is a fast Python package & project manager written in Rust.
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-#### Step 2: Install FastAPI & Uvicorn
-
-FastAPI requires an **ASGI server** to run. [Uvicorn](https://www.uvicorn.org/) is the standard lightning-fast ASGI server.
-
-```bash
-pip install fastapi uvicorn
-```
-
-#### Step 3: Run the Server
-
-```bash
-uvicorn main:app --reload
-```
-
----
-
-### Option B: Modern Setup using `uv` (Recommended ⚡)
-
-[`uv`](https://docs.astral.sh/uv/) is an extremely fast Python package and project manager written in Rust by Astral (creators of Ruff). It replaces `pip`, `pip-tools`, `virtualenv`, and `poetry`.
-
-#### Step 1: Initialize a Project with `uv init`
-
-```bash
-# Initialize a new project in the current directory
-uv init
-
-# Or create a new application directory
+# Initialize a new project
 uv init my-fastapi-app
 cd my-fastapi-app
+
+# Add dependencies (creates .venv & uv.lock automatically)
+uv add fastapi uvicorn "sqlalchemy[asyncio]" asyncpg pydantic
+
+# Run development server
+uv run uvicorn src.main:app --reload
 ```
 
-`uv init` generates:
-
-- `pyproject.toml`: Project configuration & dependencies definition.
-- `.python-version`: Pins the Python version for the project.
-- `.gitignore`: Standard Python gitignore rules.
-- `README.md` & `main.py` / `hello.py`: Boilerplate project files.
-
-#### Step 2: Add Dependencies with `uv add`
+### Option B: Traditional Setup with `venv` + `pip`
 
 ```bash
-uv add fastapi uvicorn
-```
+# Create and activate virtual environment
+python -m venv .venv
+# Windows (PowerShell):
+.\.venv\Scripts\Activate.ps1
+# macOS/Linux:
+source .venv/bin/activate
 
-`uv` automatically creates a `.venv` virtual environment if one doesn't exist, updates `pyproject.toml`, and creates a deterministic `uv.lock` file.
+# Install dependencies
+pip install -r requirements.txt
 
-#### Step 3: Run the Server with `uv run`
-
-```bash
-uv run uvicorn main:app --reload
-```
-
-`uv run` ensures the command runs in the project's virtual environment automatically without manually activating `.venv`.
-
----
-
-## 3. Your First FastAPI Application
-
-Create a file named `main.py`:
-
-```python
-from fastapi import FastAPI
-
-# 1. Create a FastAPI instance
-app = FastAPI(
-    title="My First FastAPI App",
-    description="Getting started with FastAPI",
-    version="1.0.0"
-)
-
-# 2. Define a path operation (decorator + function)
-@app.get("/")
-def read_root():
-    return {"message": "Hello, World!", "status": "active"}
-```
-
-### Interactive API Documentation
-
-FastAPI automatically generates interactive documentation for your endpoints:
-
-- **Swagger UI**: Visit `http://127.0.0.1:8000/docs` in your browser. You can test endpoints directly from here!
-- **ReDoc**: Visit `http://127.0.0.1:8000/redoc` for clean, alternative documentation.
-
----
-
-## 4. HTTP Methods
-
-HTTP methods specify the desired action to be performed on a resource:
-
-| Method       | CRUD Action | Purpose                                 | Example                      |
-| :----------- | :---------- | :-------------------------------------- | :--------------------------- |
-| **`GET`**    | Read        | Retrieve data from the server           | Fetching a student's details |
-| **`POST`**   | Create      | Send data to create a new resource      | Adding a new student         |
-| **`PUT`**    | Update      | Replace an existing resource completely | Updating student information |
-| **`DELETE`** | Delete      | Remove a resource                       | Deleting a student record    |
-
-```python
-from fastapi import FastAPI
-
-app = FastAPI()
-
-@app.get("/items")
-def get_items():
-    return {"action": "Fetch all items"}
-
-@app.post("/items")
-def create_item():
-    return {"action": "Create a new item"}
-
-@app.put("/items/{item_id}")
-def update_item(item_id: int):
-    return {"action": f"Update item {item_id}"}
-
-@app.delete("/items/{item_id}")
-def delete_item(item_id: int):
-    return {"action": f"Delete item {item_id}"}
+# Run server
+uvicorn src.main:app --reload
 ```
 
 ---
 
-## 5. Path vs. Query Parameters
+## 3. FastAPI Fundamentals & HTTP Operations
 
-### Path Parameters
-
-Path parameters are embedded directly within the URL path. They are mandatory and typically used to identify a specific resource.
+### Path Parameters vs. Query Parameters vs. Headers
 
 ```python
-@app.get("/users/{user_id}")
-def get_user_by_id(user_id: int):
-    # FastAPI automatically parses user_id to an integer
-    return {"user_id": user_id, "type": type(user_id).__name__}
-```
+from fastapi import FastAPI, Path, Query, Header, Cookie
+from typing import Optional
 
-_URL Example:_ `http://127.0.0.1:8000/users/10`
-
-### Query Parameters
-
-Query parameters are appended after a `?` in the URL, separated by `&`. They are usually optional and used for filtering, sorting, or pagination.
-
-```python
-@app.get("/search")
-def search_items(q: str, limit: int = 10, skip: int = 0):
-    return {"query": q, "limit": limit, "skip": skip}
-```
-
-_URL Example:_ `http://127.0.0.1:8000/search?q=python&limit=5&skip=0`
-
-### Combining Path and Query Parameters
-
-```python
-@app.get("/users/{user_id}/posts")
-def get_user_posts(user_id: int, category: str | None = None):
-    return {"user_id": user_id, "category": category}
-```
-
-_URL Example:_ `http://127.0.0.1:8000/users/42/posts?category=tech`
-
----
-
-## 6. Data Validation with Pydantic
-
-**Pydantic** is used for data parsing and validation in Python. By inheriting from `pydantic.BaseModel`, you define the shape and types of the JSON payloads your API expects.
-
-```python
-from fastapi import FastAPI
-from pydantic import BaseModel, Field
-
-class Item(BaseModel):
-    name: str
-    description: str | None = None
-    price: float = Field(gt=0, description="The price must be greater than zero")
-    in_stock: bool = True
-
-app = FastAPI()
-
-@app.post("/items")
-def create_item(item: Item):
-    # 'item' is automatically validated against the Item model
-    return {"message": "Item created successfully", "data": item}
-```
-
-### What happens when validation fails?
-
-If a client sends invalid data (e.g. `price: -10` or missing mandatory fields), FastAPI automatically returns a **`422 Unprocessable Entity`** response explaining exactly what failed, without requiring any manual `if/else` checks!
-
----
-
-## 7. Complete In-Memory CRUD API Example
-
-Here is a complete, working **Student Management API** that demonstrates full CRUD operations using an in-memory Python list.
-
-Save this in `main.py`:
-
-```python
-from fastapi import FastAPI, HTTPException, status
-from pydantic import BaseModel, Field
-
-app = FastAPI(title="Student Management API")
-
-# Pydantic Schemas
-class StudentCreate(BaseModel):
-    name: str = Field(min_length=2, example="Alice Smith")
-    age: int = Field(gt=0, lt=120, example=20)
-    course: str = Field(example="Computer Science")
-
-class StudentResponse(BaseModel):
-    id: int
-    name: str
-    age: int
-    course: str
-
-# In-memory database simulation
-students_db: list[dict] = [
-    {"id": 1, "name": "John Doe", "age": 21, "course": "Data Science"},
-    {"id": 2, "name": "Jane Miller", "age": 22, "course": "Artificial Intelligence"}
-]
-id_counter = 2
-
-# 1. READ ALL (GET)
-@app.get("/students", response_model=list[StudentResponse])
-def get_all_students():
-    return students_db
-
-# 2. READ ONE (GET)
-@app.get("/students/{student_id}", response_model=StudentResponse)
-def get_student(student_id: int):
-    for student in students_db:
-        if student["id"] == student_id:
-            return student
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Student with ID {student_id} not found"
-    )
-
-# 3. CREATE (POST)
-@app.post("/students", response_model=StudentResponse, status_code=status.HTTP_201_CREATED)
-def create_student(student: StudentCreate):
-    global id_counter
-    id_counter += 1
-    new_student = {"id": id_counter, **student.model_dump()}
-    students_db.append(new_student)
-    return new_student
-
-# 4. UPDATE (PUT)
-@app.put("/students/{student_id}", response_model=StudentResponse)
-def update_student(student_id: int, updated_student: StudentCreate):
-    for index, student in enumerate(students_db):
-        if student["id"] == student_id:
-            updated_data = {"id": student_id, **updated_student.model_dump()}
-            students_db[index] = updated_data
-            return updated_data
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Student with ID {student_id} not found"
-    )
-
-# 5. DELETE (DELETE)
-@app.delete("/students/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_student(student_id: int):
-    for index, student in enumerate(students_db):
-        if student["id"] == student_id:
-            students_db.pop(index)
-            return
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Student with ID {student_id} not found"
-    )
-```
-
----
-
-## 8. HTTP Status Codes & Exception Handling
-
-Standard HTTP status codes communicate the result of an API request to clients.
-
-| Code      | Status Name               | Meaning                            | Common Use Case           |
-| :-------- | :------------------------ | :--------------------------------- | :------------------------ |
-| **`200`** | **OK**                    | Request succeeded                  | `GET`, `PUT` success      |
-| **`201`** | **Created**               | Resource successfully created      | `POST` success            |
-| **`204`** | **No Content**            | Succeeded, but no content returned | `DELETE` success          |
-| **`400`** | **Bad Request**           | Invalid client input               | Business logic error      |
-| **`401`** | **Unauthorized**          | Client lacks valid credentials     | Missing API key/JWT token |
-| **`404`** | **Not Found**             | Resource does not exist            | Invalid ID provided       |
-| **`422`** | **Unprocessable Entity**  | Request body validation failed     | Built-in Pydantic error   |
-| **`500`** | **Internal Server Error** | Unexpected server crash            | Server-side bug           |
-
-### Raising HTTP Exceptions
-
-Use `HTTPException` from FastAPI to cleanly return error messages with appropriate HTTP status codes:
-
-```python
-from fastapi import FastAPI, HTTPException, status
-
-app = FastAPI()
+app = FastAPI(title="Parameter Demonstration")
 
 @app.get("/items/{item_id}")
-def read_item(item_id: int):
-    if item_id > 100:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Item ID out of allowed range."
-        )
-    return {"item_id": item_id}
+async def get_item(
+    # Path parameter (identifies specific resource)
+    item_id: int = Path(..., gt=0, description="The ID of the item"),
+    # Query parameter (used for filtering/sorting/pagination)
+    search: Optional[str] = Query(None, min_length=2, max_length=50),
+    page: int = Query(1, ge=1),
+    # Header & Cookie extraction
+    user_agent: Optional[str] = Header(None),
+    session_id: Optional[str] = Cookie(None)
+):
+    return {
+        "item_id": item_id,
+        "search": search,
+        "page": page,
+        "user_agent": user_agent
+    }
 ```
+
+### HTTP Verbs & Status Code Matrix
+
+| Verb         | Action            | Idempotent | Success Code                | Common Status Codes                                    |
+| :----------- | :---------------- | :--------- | :-------------------------- | :----------------------------------------------------- |
+| **`GET`**    | Retrieve resource | Yes        | `200 OK`                    | `404 Not Found`                                        |
+| **`POST`**   | Create / Action   | No         | `201 Created`               | `400 Bad Request`, `409 Conflict`, `422 Unprocessable` |
+| **`PUT`**    | Full replacement  | Yes        | `200 OK` / `204 No Content` | `404 Not Found`, `400 Bad Request`                     |
+| **`PATCH`**  | Partial update    | No         | `200 OK`                    | `404 Not Found`                                        |
+| **`DELETE`** | Remove resource   | Yes        | `200 OK` / `204 No Content` | `404 Not Found`                                        |
 
 ---
 
-## 9. Response Models
+## 4. Pydantic v2 Schema Modeling & Validation
 
-The `response_model` parameter in path operation decorators allows you to:
-
-- Filter output data (hide sensitive fields like passwords or internal metadata).
-- Validate response data structure.
-- Auto-generate accurate OpenAPI documentation schemas.
+Pydantic v2 uses a compiled Rust core (`pydantic-core`) providing fast data parsing, serialization, and schema validation.
 
 ```python
+from datetime import date
+from pydantic import BaseModel, ConfigDict, Field, field_validator, EmailStr
+
+class CpuBase(BaseModel):
+    prd_code: str = Field(..., description="Unique hardware SKU code")
+    brand: str | None = Field(default=None, description="Manufacturer brand (e.g., AMD, INTEL)")
+    name: str = Field(..., min_length=2, max_length=100)
+    core: int = Field(..., gt=0, description="Physical core count")
+    thread: int = Field(..., gt=0, description="Logical thread count")
+    base_clk: float = Field(default=1.0, ge=1.0, description="Base clock in GHz")
+    boost_clk: float | None = Field(default=None, ge=1.0, description="Boost clock in GHz")
+    price: float = Field(default=0.0, ge=0.0)
+    updated_at: date = Field(default_factory=date.today)
+
+    # Pydantic v2 Field Validator
+    @field_validator("brand")
+    @classmethod
+    def normalize_brand(cls, v: str | None) -> str | None:
+        if v:
+            return v.strip().upper()
+        return v
+
+    # Pydantic v2 Config
+    model_config = ConfigDict(
+        from_attributes=True,         # Enables ORM model serialization (SQLAlchemy)
+        str_strip_whitespace=True,    # Automatically trims strings
+        json_schema_extra={
+            "examples": [
+                {
+                    "prd_code": "AMD-7800X3D",
+                    "brand": "AMD",
+                    "name": "Ryzen 7 7800X3D",
+                    "core": 8,
+                    "thread": 16,
+                    "base_clk": 4.2,
+                    "boost_clk": 5.0,
+                    "price": 449.00
+                }
+            ]
+        }
+    )
+
+class CpuCreate(CpuBase):
+    pass
+
+class CpuResponse(CpuBase):
+    id: int
+```
+
+---
+
+## 5. Dependency Injection (`Depends`)
+
+FastAPI's dependency injection system facilitates code reuse, authentication verification, and automatic resource lifecycle management.
+
+### Database Session Generator & Reusable Pagination
+
+```python
+from collections.abc import AsyncGenerator
+from fastapi import Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from src.database.connection import AsyncSessionFactory
+
+# 1. Async Generator Dependency (Handles opening & closing connections cleanly)
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSessionFactory() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+
+# 2. Class-Based Query Dependency
+class PaginationParams:
+    def __init__(
+        self,
+        page: int = Query(1, ge=1, description="Page index"),
+        limit: int = Query(20, ge=1, le=100, description="Items per page")
+    ):
+        self.page = page
+        self.limit = limit
+        self.offset = (page - 1) * limit
+
+# 3. Usage in Route Handlers
+@router.get("/cpus")
+async def list_cpus(
+    pagination: PaginationParams = Depends(),
+    db: AsyncSession = Depends(get_db)
+):
+    # db is an active AsyncSession, pagination holds offset/limit
+    pass
+```
+
+---
+
+## 6. Lifespan Management, Middleware & Security
+
+### Lifespan Context Manager (Modern Startup & Shutdown)
+
+FastAPI replaced `@app.on_event("startup")` with `@asynccontextmanager` lifespans for predictable async resource management.
+
+```python
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from pydantic import BaseModel, EmailStr
+from src.database.connection import async_engine
 
-class UserIn(BaseModel):
-    username: str
-    password: str
-    email: str
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # [STARTUP] Setup connection pools, warm caches
+    print("🚀 Initializing database pool...")
+    yield
+    # [SHUTDOWN] Gracefully close pools and cleanup connections
+    print("🛑 Disposing database pool...")
+    await async_engine.dispose()
 
-class UserOut(BaseModel):
-    username: str
-    email: str
+app = FastAPI(lifespan=lifespan)
+```
 
-app = FastAPI()
+### Security & CORS Middleware
 
-@app.post("/users", response_model=UserOut)
-def create_user(user: UserIn):
-    # Even if we process 'password', the output will exclude it
-    # because UserOut only defines 'username' and 'email'
-    return user
+```python
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Request
+import time
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "https://yourfrontend.com"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Custom HTTP Middleware: Request Processing Duration Header
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.perf_counter()
+    response = await call_next(request)
+    process_time = time.perf_counter() - start_time
+    response.headers["X-Process-Time"] = f"{process_time:.4f}s"
+    return response
 ```
 
 ---
 
-## 10. Bonus Concepts: Folder Structure (Standard & `uv`) & Dependency Injection
+## 7. Async Database Integration (SQLAlchemy 2.0 & PostgreSQL/SQLite)
 
-### Standard Project Folder Structure (`pip` / Traditional)
+### Declarative Model Mapping (SQLAlchemy 2.0 `Mapped` Syntax)
 
-```text
-my_fastapi_app/
-│
-├── app/
-│   ├── __init__.py
-│   ├── main.py          # App initialization & router mounting
-│   ├── dependencies.py  # Shared dependencies
-│   │
-│   ├── routers/         # API Route Handlers
-│   │   ├── __init__.py
-│   │   ├── students.py
-│   │   └── courses.py
-│   │
-│   ├── schemas/         # Pydantic Models (Input/Output validation)
-│   │   ├── __init__.py
-│   │   └── student_schema.py
-│   │
-│   └── models/          # Database Models (ORMs like SQLAlchemy - future use)
-│       └── __init__.py
-│
-├── .gitignore
-├── README.md
-└── requirements.txt
+```python
+from datetime import date
+from sqlalchemy import String, Integer, Float, Date
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+class Base(DeclarativeBase):
+    pass
+
+class Cpu(Base):
+    __tablename__ = "cpus"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    prd_code: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    brand: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    core: Mapped[int] = mapped_column(Integer, nullable=False)
+    thread: Mapped[int] = mapped_column(Integer, nullable=False)
+    base_clk: Mapped[float] = mapped_column(Float, nullable=False)
+    boost_clk: Mapped[float | None] = mapped_column(Float, nullable=True)
+    socket: Mapped[str] = mapped_column(String(30), nullable=False)
+    tdp: Mapped[int] = mapped_column(Integer, nullable=False)
+    release_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    price: Mapped[float] = mapped_column(Float, nullable=False)
+    updated_at: Mapped[date] = mapped_column(Date, default=date.today, nullable=False)
+```
+
+### Async Database Session Setup
+
+```python
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+
+DB_URL = "postgresql+asyncpg://postgres:password@localhost:5432/hardware_db"
+
+async_engine = create_async_engine(DB_URL, echo=False, pool_pre_ping=True)
+AsyncSessionFactory = async_sessionmaker(
+    bind=async_engine,
+    expire_on_commit=False,
+    autoflush=False
+)
 ```
 
 ---
 
-### Project Folder Structure with `uv` (`src/` Package Layout)
+## 8. Layered Architecture Pattern (DAO / Service / Controller)
 
-When creating a production project using `uv init`, `uv` creates a `src/` layout with `pyproject.toml` and `uv.lock`.
+In production services, decoupling routing from business logic and database queries maintains clean testability and code organization:
 
-```text
-my-fastapi-app/
-├── pyproject.toml         # Dependency & project configuration (managed by uv)
-├── uv.lock                # Lockfile for exact reproducible builds
-├── .python-version        # Pins Python version for uv
-├── README.md              # Documentation
-├── .gitignore
-├── .venv/                 # Virtual environment (managed automatically by uv)
-│
-└── src/                   # Source root directory
-    └── app/               # Main FastAPI application package
-        ├── __init__.py
-        ├── main.py        # App creation & router inclusions
-        ├── config.py      # Environment & app settings
-        ├── dependencies.py# Shared dependencies (DB sessions, Auth, etc.)
-        │
-        ├── routers/       # Modular route definitions
-        │   ├── __init__.py
-        │   ├── students.py
-        │   └── courses.py
-        │
-        ├── schemas/       # Pydantic schemas for data validation
-        │   ├── __init__.py
-        │   └── student.py
-        │
-        └── models/        # Database models (ORMs like SQLAlchemy/SQLModel)
-            └── __init__.py
+```
+Request ──► Router (Path definition & response schema)
+               └──► Controller (Request body / header parsing & status mapping)
+                      └──► Service (Business logic & validations)
+                             └──► DAO (Data Access Object / Raw database queries)
+                                    └──► Database (PostgreSQL / SQLite)
 ```
 
-#### Running a `src/` Layout App with `uv`
+### 1. Data Access Object (DAO Layer)
 
-If `main.py` is located inside `src/app/main.py`:
+```python
+from sqlalchemy import select
+from src.database.helpers import fetch_all, fetch_one, create, update, delete_by_id
+from src.models.cpu_model import Cpu
+
+class CpuDAO:
+    @staticmethod
+    async def get_all() -> list[Cpu]:
+        query = select(Cpu).order_by(Cpu.id)
+        return await fetch_all(query)
+
+    @staticmethod
+    async def get_by_prd_code(prd_code: str) -> Cpu | None:
+        query = select(Cpu).where(Cpu.prd_code == prd_code)
+        return await fetch_one(query)
+```
+
+### 2. Business Service Layer
+
+```python
+class CpuService:
+    @staticmethod
+    async def save(**data) -> tuple[dict, int]:
+        prd_code = data.get("prd_code")
+        if not prd_code:
+            return {"error": "Field 'prd_code' is required"}, 400
+
+        existing = await CpuDAO.get_by_prd_code(str(prd_code))
+        if existing:
+            # Business update flow
+            return {"id": existing.id, "status": "updated"}, 200
+        else:
+            # Business create flow
+            new_id = await CpuDAO.create_cpu(CpuBase(**data))
+            return {"id": new_id, "status": "created"}, 201
+```
+
+### 3. Controller Layer & Response Envelope
+
+```python
+from src.schemas.response_schema import APIResponse
+
+async def cpu_controller(request: Request) -> ApiResponse:
+    data = await get_request_data(request.headers.get("content-type", ""), request)
+    match request.method:
+        case "POST":
+            result, status_code = await CpuService.save(**data)
+            return APIResponse.success(data=result, code=status_code)
+```
+
+---
+
+## 9. Background Tasks & Global Exception Handling
+
+### Non-Blocking Background Tasks
+
+```python
+from fastapi import BackgroundTasks, APIRouter
+
+router = APIRouter()
+
+def send_audit_log(sku: str):
+    # Simulated background task (e.g. logging, email notification)
+    print(f"[Audit] New product created: {sku}")
+
+@router.post("/items")
+async def create_item(item: CpuCreate, background_tasks: BackgroundTasks):
+    background_tasks.add_task(send_audit_log, item.prd_code)
+    return {"message": "Processing item creation..."}
+```
+
+### Global Custom Exception Handler
+
+```python
+from fastapi import Request, HTTPException
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "status_code": exc.status_code,
+            "detail": exc.detail,
+            "path": request.url.path
+        }
+    )
+```
+
+---
+
+## 10. Project Structures & Running the Applications
+
+### Repository Layout
+
+```text
+FastAPI/
+├── main.py                   # Master educational reference (All concepts in one blueprint)
+├── README.md                 # Complete documentation & study guide
+├── .gitignore
+│
+├── src/                      # User Auth & Management API (Async SQLAlchemy + Router)
+│   ├── main.py
+│   ├── router.py
+│   ├── db.py
+│   ├── models.py
+│   └── schemas.py
+│
+└── pc-parts-api/             # Production Layered PC Parts & CPU API
+    ├── requirements.txt
+    ├── .env.example
+    └── src/
+        ├── main.py           # Application Entrypoint
+        ├── init_db.py        # Database migration & dummy data seeder
+        ├── controllers/      # Request dispatching & handling
+        ├── core/             # Helpers & utility functions
+        ├── dao/              # Data Access Objects (DB query abstraction)
+        ├── database/         # Engine, base declarative & session generators
+        ├── models/           # SQLAlchemy 2.0 ORM Mapped models
+        ├── routers/          # Modular API endpoint routes
+        ├── schemas/          # Pydantic v2 DTO models
+        └── services/         # Business domain logic
+```
+
+### How to Run the Applications
+
+#### 1. Running the Master Reference Blueprint
 
 ```bash
-uv run uvicorn app.main:app --reload
+uvicorn main:app --reload --port 8000
+```
+
+Interactive docs: `http://127.0.0.1:8000/docs`
+
+#### 2. Running User Management API (`src/`)
+
+```bash
+# Run using module syntax from the root directory:
+uvicorn src.main:app --reload --port 8000
+```
+
+#### 3. Running PC Parts API (`pc-parts-api/`)
+
+```bash
+cd pc-parts-api
+
+# Step 1: Seed the database
+python -m src.init_db
+
+# Step 2: Start the server
+uvicorn src.main:app --reload --port 8000
 ```
 
 ---
 
-### Basics of Dependency Injection (`Depends`)
+## 🎓 Summary of Mastered Skills
 
-FastAPI features a powerful **Dependency Injection** system that makes it easy to reuse logic (like database sessions, authentication, or common query filters across endpoints).
-
-```python
-from fastapi import FastAPI, Depends
-
-app = FastAPI()
-
-# 1. Dependency function
-def common_parameters(q: str | None = None, skip: int = 0, limit: int = 10):
-    return {"q": q, "skip": skip, "limit": limit}
-
-# 2. Inject dependency into endpoints
-@app.get("/items")
-def read_items(commons: dict = Depends(common_parameters)):
-    return commons
-
-@app.get("/users")
-def read_users(commons: dict = Depends(common_parameters)):
-    return commons
-```
-
----
+- [x] Asynchronous ASGI API lifecycle & lifespan context management
+- [x] Pydantic v2 validation constraints, field validators, & custom `ConfigDict`
+- [x] Async SQLAlchemy 2.0 declarative ORM (`Mapped`, `mapped_column`, `select`, `where`)
+- [x] Modular routing with `APIRouter`
+- [x] Dependency injection for database sessions & pagination (`Depends`)
+- [x] Multi-tier layered architecture (DAO, Service, Controller, Router)
+- [x] CORS, custom process timing middleware, and background tasks
+- [x] Exception handling and standardized JSON response envelopes
+- [x] Modern Python package & environment workflows (`uv` & `pip`)
