@@ -1,9 +1,9 @@
 from fastapi import APIRouter, status, HTTPException, Depends
 from sqlalchemy.exc import IntegrityError
 
-from db import get_db
-from models import Users
-from schemas import UserRegister, UserResponse
+from .db import get_db
+from .models import Users
+from .schemas import UserRegister, UserResponse
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
