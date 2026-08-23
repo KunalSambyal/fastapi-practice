@@ -7,12 +7,12 @@ from app.schemas.user_schema import (
     UserRegister,
     UserResponse,
     UserLogin,
-    UserLoginResponse,
+    Token,
 )
 from app.models.user_model import User
 from app.database import get_db
 
-from app.auth import create_token, verify_token
+from app.auth import password_hash
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -42,7 +42,7 @@ async def create_user(user_data: UserRegister, session: AsyncSession = Depends(g
     new_user = User(
         username=user_data.username,
         email=user_data.email,
-        password=user_data.password.get_secret_value(),
+        password=password_hash.hash(user_data.password.get_secret_value()),
     )
 
     # Add the new user to the session and commit
@@ -53,30 +53,30 @@ async def create_user(user_data: UserRegister, session: AsyncSession = Depends(g
     return new_user
 
 
-@router.post("/login", response_model=UserLoginResponse, status_code=status.HTTP_200_OK)
-async def login_user(user_data: UserLogin, session: AsyncSession = Depends(get_db)):
+# @router.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
+# async def login_user(user_data: UserLogin, session: AsyncSession = Depends(get_db)):
 
-    existing = select(User).where(User.username == user_data.username)
-    result = (await session.execute(existing)).scalar_one_or_none()
-    if not result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+#     existing = select(User).where(User.username == user_data.username)
+#     result = (await session.execute(existing)).scalar_one_or_none()
+#     if not result:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="User not found",
+#         )
 
-    # Verify the password
-    if result.password != user_data.password.get_secret_value():
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect password",
-        )
+#     # Verify the password
+#     if result.password != user_data.password.get_secret_value():
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Incorrect password",
+#         )
 
-    token = create_token({"sub": str(result.id)})
+#     token = create_token({"sub": str(result.id)})
 
-    return {"access_token": token}
+#     return {"access_token": token}
 
 
-# protected route
-@router.get("/me")
-async def get_user(user=Depends(verify_token)):
-    return {"msg": "secure route", "user": user}
+# # protected route
+# @router.get("/me")
+# async def get_user(user=Depends(verify_token)):
+#     return {"msg": "secure route", "user": user}

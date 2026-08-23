@@ -50,6 +50,6 @@ class UserLogin(BaseModel):
     password: SecretStr = Field(..., description="Password of the user")
 
 
-class UserLoginResponse(BaseModel):
+class Token(BaseModel):
     access_token: str
-    token_type: str = "bearer"
+    token_type: str
