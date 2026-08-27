@@ -59,3 +59,43 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str | None = None
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr = Field(..., description="Registered email of the user")
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr = Field(..., description="Registered email of the user")
+    otp: str = Field(
+        ...,
+        min_length=4,
+        max_length=6,
+        pattern=r"^\d+$",
+        description="Numeric OTP received on email",
+        examples=["437323"],
+    )
+    new_password: SecretStr = Field(
+        ...,
+        min_length=8,
+        max_length=20,
+        description="New password containing uppercase, lowercase, digit, and special char.",
+    )
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v: SecretStr) -> SecretStr:
+        password = v.get_secret_value()
+
+        if len(password) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        if not re.search(r"[A-Z]", password):
+            raise ValueError("Password must contain an uppercase letter")
+        if not re.search(r"[a-z]", password):
+            raise ValueError("Password must contain a lowercase letter")
+        if not re.search(r"\d", password):
+            raise ValueError("Password must contain a digit")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+            raise ValueError("Password must contain a special character")
+
+        return v
