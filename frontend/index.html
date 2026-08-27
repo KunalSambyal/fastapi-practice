@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth Portal | FastAPI</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="auth-container">
+    
+    <!-- Top Brand / Header -->
+    <div class="auth-header">
+      <h2>Auth Portal</h2>
+      <p id="header-subtitle">Welcome back! Please enter your details.</p>
+    </div>
+
+    <!-- Alert / Notification Banner -->
+    <div id="alert-box" class="alert hidden"></div>
+
+    <!-- Navigation Tabs -->
+    <div class="tab-group" id="tab-nav">
+      <button type="button" class="tab-btn active" onclick="switchView('login')">Login</button>
+      <button type="button" class="tab-btn" onclick="switchView('register')">Register</button>
+    </div>
+
+    <!-- 1. LOGIN FORM -->
+    <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="login-username">Username</label>
+        <input 
+          type="text" 
+          id="login-username" 
+          placeholder="Enter your username" 
+          required 
+          autocomplete="username"
+        >
+      </div>
+
+      <div class="form-group">
+        <div class="label-row">
+          <label for="login-password">Password</label>
+          <a href="#" class="inline-link" onclick="switchView('forgot-password'); return false;">Forgot password?</a>
+        </div>
+        <input 
+          type="password" 
+          id="login-password" 
+          placeholder="••••••••" 
+          required 
+          autocomplete="current-password"
+        >
+      </div>
+
+      <button type="submit" class="submit-btn" id="login-btn">Log In</button>
+
+      <p class="switch-text">
+        Don't have an account? 
+        <a href="#" onclick="switchView('register'); return false;">Register</a>
+      </p>
+    </form>
+
+    <!-- 2. REGISTER FORM -->
+    <form id="register-form" class="auth-form hidden" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label for="reg-username">Username</label>
+        <input 
+          type="text" 
+          id="reg-username" 
+          placeholder="e.g. john_12 (min 3 chars)" 
+          required 
+          minlength="3"
+          maxlength="100"
+          pattern="^\w+$"
+          title="Username must be alphanumeric and can contain underscores"
+          autocomplete="username"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="reg-email">Email</label>
+        <input 
+          type="email" 
+          id="reg-email" 
+          placeholder="john@example.com" 
+          required 
+          autocomplete="email"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="reg-password">Password</label>
+        <input 
+          type="password" 
+          id="reg-password" 
+          placeholder="••••••••" 
+          required 
+          minlength="8" 
+          maxlength="20"
+          autocomplete="new-password"
+        >
+        <small class="hint-text">
+          8-20 characters, with at least 1 uppercase, 1 lowercase, 1 number & 1 special character.
+        </small>
+      </div>
+
+      <button type="submit" class="submit-btn" id="reg-btn">Create Account</button>
+
+      <p class="switch-text">
+        Already have an account? 
+        <a href="#" onclick="switchView('login'); return false;">Log In</a>
+      </p>
+    </form>
+
+    <!-- 3. FORGOT PASSWORD FORM -->
+    <form id="forgot-form" class="auth-form hidden" onsubmit="handleForgotPassword(event)">
+      <p class="form-description">
+        Enter your registered email address and we'll send you an OTP to reset your password.
+      </p>
+
+      <div class="form-group">
+        <label for="forgot-email">Email Address</label>
+        <input 
+          type="email" 
+          id="forgot-email" 
+          placeholder="john@example.com" 
+          required 
+          autocomplete="email"
+        >
+      </div>
+
+      <button type="submit" class="submit-btn" id="forgot-btn">Send OTP</button>
+
+      <div class="links-stacked">
+        <a href="#" class="inline-link" onclick="switchView('otp'); return false;">Already have an OTP? Reset Password</a>
+        <a href="#" class="inline-link secondary" onclick="switchView('login'); return false;">&larr; Back to Login</a>
+      </div>
+    </form>
+
+    <!-- 4. OTP VERIFICATION & PASSWORD RESET FORM -->
+    <form id="otp-form" class="auth-form hidden" onsubmit="handleVerifyOtpAndReset(event)">
+      <p class="form-description">
+        Enter the 6-digit OTP sent to your email along with your new password.
+      </p>
+
+      <div class="form-group">
+        <label for="otp-email">Email / Username</label>
+        <input 
+          type="text" 
+          id="otp-email" 
+          placeholder="john@example.com" 
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="otp-code">OTP Code</label>
+        <input 
+          type="text" 
+          id="otp-code" 
+          placeholder="123456" 
+          maxlength="6" 
+          required 
+          pattern="^\d{4,6}$"
+          title="Enter the 4-6 digit numeric OTP code"
+          autocomplete="one-time-code"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="otp-new-password">New Password</label>
+        <input 
+          type="password" 
+          id="otp-new-password" 
+          placeholder="••••••••" 
+          required 
+          minlength="8"
+          maxlength="20"
+          autocomplete="new-password"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="otp-confirm-password">Confirm New Password</label>
+        <input 
+          type="password" 
+          id="otp-confirm-password" 
+          placeholder="••••••••" 
+          required 
+          minlength="8"
+          maxlength="20"
+          autocomplete="new-password"
+        >
+      </div>
+
+      <button type="submit" class="submit-btn" id="otp-btn">Reset Password</button>
+
+      <div class="links-stacked">
+        <a href="#" class="inline-link secondary" onclick="switchView('login'); return false;">&larr; Back to Login</a>
+      </div>
+    </form>
+
+    <!-- 5. AUTHENTICATED USER DASHBOARD (After login) -->
+    <div id="profile-card" class="profile-card hidden">
+      <div class="success-icon">&#10004;</div>
+      <h3>Authenticated Successfully!</h3>
+      <p class="profile-meta">Here are your user details from <code>/auth/me</code>:</p>
+      
+      <div class="user-info-box">
+        <p><strong>ID:</strong> <span id="user-id">-</span></p>
+        <p><strong>Username:</strong> <span id="user-username">-</span></p>
+        <p><strong>Email:</strong> <span id="user-email">-</span></p>
+      </div>
+
+      <button type="button" class="logout-btn" onclick="handleLogout()">Log Out</button>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
