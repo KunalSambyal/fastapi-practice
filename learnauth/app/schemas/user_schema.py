@@ -44,6 +44,8 @@ class UserResponse(BaseModel):
     username: str
     email: str
 
+    model_config = {"from_attributes": True}
+
 
 class UserLogin(BaseModel):
     username: str = Field(..., description="Username of the user")
@@ -52,4 +54,8 @@ class UserLogin(BaseModel):
 
 class Token(BaseModel):
     access_token: str
-    token_type: str
+    token_type: str = "bearer"
+
+
+class TokenData(BaseModel):
+    username: str | None = None
