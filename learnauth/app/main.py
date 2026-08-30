@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from app.database import async_engine
 from app.models.user_model import Base
 from app.routes.user_router import router as user_router
+from app.routes.notes_router import notes_router
+from app.models.notes_model import Note
 
 
 @asynccontextmanager
@@ -32,3 +34,4 @@ async def read_root():
 
 
 app.include_router(user_router)
+app.include_router(notes_router)
